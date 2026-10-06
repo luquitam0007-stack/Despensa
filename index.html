@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0f766e">
+<link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22Despensa%22%2C%22short_name%22%3A%22Despensa%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23f2f5f3%22%2C%22theme_color%22%3A%22%230f766e%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%2C%253Csvg%2520xmlns%253D%2527http%253A%2F%2Fwww.w3.org%2F2000%2Fsvg%2527%2520viewBox%253D%25270%25200%252064%252064%2527%253E%253Crect%2520width%253D%252764%2527%2520height%253D%252764%2527%2520rx%253D%252714%2527%2520fill%253D%2527%25230f766e%2527%2F%253E%253Ctext%2520x%253D%252732%2527%2520y%253D%252744%2527%2520font-size%253D%252736%2527%2520text-anchor%253D%2527middle%2527%253E%25F0%259F%259B%2592%253C%2Ftext%253E%253C%2Fsvg%253E%22%2C%22sizes%22%3A%2264x64%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%7D%5D%7D">
+<title>Despensa · Control de stock</title>
+<style>
+:root{
+  --bg:#f2f5f3;--surface:#fff;--ink:#16231f;--muted:#5d6e68;--line:#dbe4e0;
+  --accent:#0f766e;--accent-ink:#fff;--warn-bg:#fff4dc;--warn:#8a5300;
+  --danger-bg:#fde8e6;--danger:#b42318;--ok-bg:#e3f4ec;--ok:#14663f;--chip:#e6eeea;
+  --shadow:0 1px 2px rgba(20,40,35,.06),0 4px 14px rgba(20,40,35,.05);
+}
+[data-theme="dark"]{
+  --bg:#0f1514;--surface:#18201f;--ink:#e7efec;--muted:#92a49e;--line:#2a3735;
+  --accent:#3fc1b0;--accent-ink:#06201c;--warn-bg:#3a2c0f;--warn:#f3c56b;
+  --danger-bg:#3d1b18;--danger:#ff9d92;--ok-bg:#12301f;--ok:#7fdca8;--chip:#222d2b;
+  --shadow:none;
+}
+*{box-sizing:border-box}
+html{scroll-padding-top:80px}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;transition:background .25s,color .25s}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.wrap{max-width:720px;margin:0 auto;padding:0 14px 90px}
+header{position:sticky;top:0;z-index:5;background:var(--bg);padding:12px 0 8px;transition:background .25s}
+.top{display:flex;align-items:center;gap:8px}
+h1{font-size:1.35rem;margin:0;flex:1;letter-spacing:-.02em}
+.ib{height:40px;min-width:40px;padding:0 12px;border:1px solid var(--line);background:var(--surface);border-radius:12px;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:.9rem;transition:transform .12s,background .2s}
+.ib:active{transform:scale(.94)}
+.search{width:100%;margin-top:10px;height:46px;padding:0 14px;border:1px solid var(--line);border-radius:14px;background:var(--surface);transition:border-color .2s}
+.search:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 25%,transparent)}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:10px 0 4px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;border:1px solid transparent;background:var(--chip);padding:7px 14px;border-radius:99px;font-size:.88rem;transition:background .2s,color .2s,transform .12s}
+.chip:active{transform:scale(.95)}
+.chip[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);font-weight:600}
+.toolbar{display:flex;gap:10px;align-items:center;margin:6px 2px 0;flex-wrap:wrap}
+.sortbox{display:flex;align-items:center;gap:6px;font-size:.85rem;color:var(--muted);margin-left:auto}
+.sortbox select{height:34px;padding:0 8px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-size:.85rem}
+.summary{display:flex;gap:14px;color:var(--muted);font-size:.85rem;margin:10px 2px;flex-wrap:wrap}
+.summary b{color:var(--ink)}
+.list{display:grid;gap:12px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:14px;box-shadow:var(--shadow);transition:opacity .2s,border-color .2s;scroll-margin-top:90px}
+.card.out{border-color:var(--danger)}
+.row{display:flex;align-items:flex-start;gap:12px}
+.info{flex:1;min-width:0}
+.name{font-weight:650;font-size:1.05rem;overflow-wrap:anywhere}
+.cat{display:inline-block;margin-top:3px;font-size:.78rem;color:var(--muted);background:var(--chip);padding:2px 9px;border-radius:99px}
+.acts{display:flex;gap:4px}
+.mini{border:0;background:none;color:var(--muted);width:36px;height:36px;border-radius:10px;font-size:1.05rem}
+.mini:hover{background:var(--chip);color:var(--ink)}
+.stock{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;flex-wrap:wrap}
+.stepper{display:flex;align-items:center;gap:6px}
+.step{width:46px;height:46px;border-radius:14px;border:1px solid var(--line);background:var(--chip);font-size:1.5rem;line-height:1;transition:transform .12s,background .15s,opacity .2s}
+.step.plus{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.step:active:not(:disabled){transform:scale(.88)}
+.step:disabled{opacity:.35;cursor:not-allowed}
+.qty{min-width:64px;text-align:center;font-size:1.5rem;font-weight:700;font-variant-numeric:tabular-nums}
+.qty small{display:block;font-size:.72rem;font-weight:400;color:var(--muted)}
+.qty.bump{animation:bump .28s ease}
+.qty.shake{animation:shake .3s ease}
+@keyframes bump{40%{transform:scale(1.25);color:var(--accent)}}
+@keyframes shake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.tag{flex:1;min-width:180px;padding:9px 12px;border-radius:12px;font-size:.88rem;font-weight:500}
+.tag.need{background:var(--warn-bg);color:var(--warn)}
+.tag.full{background:var(--ok-bg);color:var(--ok)}
+.out-alert{display:block;margin-top:12px;padding:10px 12px;border-radius:12px;background:var(--danger);color:#fff;font-weight:800;text-align:center;letter-spacing:.02em}
+[data-theme="dark"] .out-alert{color:#2b0905;background:#ff9d92}
+.empty{text-align:center;color:var(--muted);padding:40px 10px}
+.fab{position:fixed;right:max(16px,calc(50% - 344px));bottom:20px;height:56px;padding:0 22px;border-radius:99px;border:0;background:var(--accent);color:var(--accent-ink);font-weight:700;box-shadow:0 6px 20px rgba(0,0,0,.25);transition:transform .12s}
+.fab:active{transform:scale(.94)}
+dialog{border:1px solid var(--line);border-radius:20px;background:var(--surface);color:var(--ink);padding:20px;width:min(92vw,440px);max-height:90vh;overflow:auto}
+dialog::backdrop{background:rgba(0,0,0,.5)}
+dialog h2{margin:0 0 12px;font-size:1.15rem}
+label{display:block;font-size:.85rem;color:var(--muted);margin:12px 0 4px}
+.f{width:100%;height:44px;padding:0 12px;border:1px solid var(--line);border-radius:12px;background:var(--bg)}
+textarea.f{height:auto;padding:12px;min-height:200px;resize:vertical;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.9rem;line-height:1.5}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.hint{font-size:.78rem;color:var(--muted);margin-top:4px}
+.err{color:var(--danger);font-size:.82rem;margin-top:6px;min-height:1.2em}
+.btns{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap}
+.btns button{flex:1;min-width:120px;height:46px;border-radius:12px;border:1px solid var(--line);background:var(--chip);font-weight:600}
+.btns .pri{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.toast{position:fixed;left:50%;bottom:90px;transform:translate(-50%,20px);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:.9rem;opacity:0;pointer-events:none;transition:.25s;max-width:90vw;z-index:10;display:flex;align-items:center;gap:12px}
+.toast.show{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+.toast button{background:transparent;border:0;color:var(--accent);font-weight:700;padding:4px 6px;border-radius:6px}
+[data-theme="dark"] .toast button{color:var(--accent)}
+
+/* Estadísticas */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:6px 0 16px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px 14px}
+.stat .k{font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.stat .v{font-size:1.6rem;font-weight:750;color:var(--accent);font-variant-numeric:tabular-nums;line-height:1.2;margin-top:2px}
+.stat .sub{font-size:.78rem;color:var(--muted);margin-top:2px}
+.bars{display:grid;gap:8px}
+.bar-row{display:grid;grid-template-columns:110px 1fr 44px;align-items:center;gap:10px;font-size:.85rem}
+.bar-track{background:var(--chip);height:14px;border-radius:99px;overflow:hidden}
+.bar-fill{background:var(--accent);height:100%;border-radius:99px;transition:width .4s}
+.bar-num{text-align:right;color:var(--muted);font-variant-numeric:tabular-nums}
+.bar-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sec-title{font-size:.95rem;font-weight:700;margin:18px 0 8px;color:var(--ink)}
+.top-list{display:grid;gap:6px;font-size:.9rem;margin:0;padding:0}
+.top-list li{display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px dashed var(--line);list-style:none}
+.top-list li:last-child{border-bottom:0}
+.top-list .cnt{color:var(--muted);font-variant-numeric:tabular-nums}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="top">
+      <h1>Despensa</h1>
+      <button class="ib" id="share-btn" title="Compartir lista" aria-label="Compartir lista de compras">↗️</button>
+      <button class="ib" id="stats-btn" title="Estadísticas" aria-label="Ver estadísticas">📊</button>
+           <button class="ib" id="theme" aria-label="Cambiar tema">🌙</button>
+    </div>
+    <input class="search" id="q" type="search" placeholder="Buscar producto…" aria-label="Buscar producto" autocomplete="off">
+    <div class="chips" id="chips" role="group" aria-label="Filtrar por categoría"></div>
+    <div class="toolbar">
+      <div class="sortbox">
+        <label for="sort" style="margin:0">Ordenar:</label>
+        <select id="sort" aria-label="Ordenar productos">
+          <option value="manual">Manual</option>
+          <option value="name">Nombre (A-Z)</option>
+          <option value="stock-asc">Menor stock</option>
+          <option value="stock-desc">Mayor stock</option>
+          <option value="urgency">Urgencia</option>
+        </select>
+      </div>
+    </div>
+  </header>
+  <div class="summary" id="summary"></div>
+  <main class="list" id="list"></main>
+</div>
+
+<button class="fab" id="add">+ Nuevo producto</button>
+
+<dialog id="dlg">
+  <form id="form" method="dialog" novalidate>
+    <h2 id="dtitle">Nuevo producto</h2>
+    <label for="fname">Nombre</label>
+    <input class="f" id="fname" required maxlength="60" autocomplete="off">
+    <label for="fcat">Categoría</label>
+    <input class="f" id="fcat" list="cats" required maxlength="30" placeholder="Ej. Lácteos" autocomplete="off">
+    <datalist id="cats"></datalist>
+    <div class="two">
+      <div><label for="fqty">Stock actual</label><input class="f" id="fqty" type="number" min="0" step="1" value="0" required></div>
+      <div><label for="flim">Límite (máximo)</label><input class="f" id="flim" type="number" min="0" step="1" value="0"></div>
+    </div>
+    <div class="hint">Límite 0 = sin límite. El stock no puede superar el límite.</div>
+    <div class="err" id="ferr" role="alert"></div>
+    <div class="btns">
+      <button type="button" id="cancel">Cancelar</button>
+      <button type="submit" class="pri">Guardar</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="dlgShare">
+  <h2>↗️ Lista de compras</h2>
+  <p class="hint" id="share-info">Productos que necesitan reponerse.</p>
+  <label for="share-text">Texto (editable)</label>
+  <textarea class="f" id="share-text" spellcheck="false"></textarea>
+  <div class="btns">
+    <button type="button" id="share-cancel">Cerrar</button>
+    <button type="button" id="share-copy">📋 Copiar</button>
+    <button type="button" class="pri" id="share-send">📤 Compartir</button>
+  </div>
+</dialog>
+
+<dialog id="dlgStats">
+  <h2>📊 Estadísticas</h2>
+  <div id="stats-content"></div>
+  <div class="btns">
+    <button type="button" class="pri" id="stats-cancel">Cerrar</button>
+  </div>
+</dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+const KEY = 'despensa.items.v2', TKEY = 'despensa.theme.v1', FKEY = 'despensa.filters.v1', SKEY = 'despensa.sort.v1';
+const DEFAULT_CATS = ['Lácteos', 'Almacén', 'Limpieza', 'Verduras', 'Carnes', 'Bebidas'];
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+
+let items = load();
+let cat = 'Todas', query = '', onlyBuy = false, editId = null, bumpId = null, bumpType = '';
+let sortMode = 'manual';
+let pendingDelete = null; // { item, index, timer }
+let toastTimer = null;
+
+// Cargar filtros guardados
+(function loadFilters() {
+  try {
+    const f = JSON.parse(localStorage.getItem(FKEY) || '{}');
+    if (typeof f.cat === 'string') cat = f.cat;
+    if (typeof f.query === 'string') query = f.query;
+    if (typeof f.onlyBuy === 'boolean') onlyBuy = f.onlyBuy;
+  } catch (e) {}
+  try {
+    const s = localStorage.getItem(SKEY);
+    if (s) sortMode = s;
+  } catch (e) {}
+})();
+
+function saveFilters() {
+  try { localStorage.setItem(FKEY, JSON.stringify({cat, query, onlyBuy})); } catch (e) {}
+}
+function saveSort() { try { localStorage.setItem(SKEY, sortMode); } catch (e) {} }
+
+function load() {
+  try {
+    const raw = localStorage.getItem(KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  return [
+    {id: uid(), name: 'Leche', category: 'Lácteos', stock: 1, limit: 6},
+    {id: uid(), name: 'Arroz', category: 'Almacén', stock: 0, limit: 3},
+    {id: uid(), name: 'Detergente', category: 'Limpieza', stock: 2, limit: 2}
+  ];
+}
+function save() { try { localStorage.setItem(KEY, JSON.stringify(items)); } catch (e) { toast('No se pudo guardar en el navegador'); } }
+
+/* Tema */
+function setTheme(t, persist) {
+  document.documentElement.dataset.theme = t;
+  $('theme').textContent = t === 'dark' ? '☀️' : '🌙';
+  if (persist) try { localStorage.setItem(TKEY, t); } catch (e) {}
+}
+(function () {
+  let t = null;
+  try { t = localStorage.getItem(TKEY); } catch (e) {}
+  if (!t) t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  setTheme(t, false);
+})();
+$('theme').onclick = () => setTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark', true);
+
+/* Render */
+function allCats() {
+  return [...new Set([...DEFAULT_CATS, ...items.map(i => i.category)])];
+}
+function needsBuy(i) { return i.stock === 0 || (i.limit > 0 && i.stock < i.limit); }
+function faltaDe(i) { return i.limit > 0 ? Math.max(0, i.limit - i.stock) : (i.stock === 0 ? 1 : 0); }
+
+function sortItems(arr) {
+  const copy = arr.slice();
+  switch (sortMode) {
+    case 'name': return copy.sort((a, b) => a.name.localeCompare(b.name, 'es'));
+    case 'stock-asc': return copy.sort((a, b) => a.stock - b.stock || a.name.localeCompare(b.name, 'es'));
+    case 'stock-desc': return copy.sort((a, b) => b.stock - a.stock || a.name.localeCompare(b.name, 'es'));
+    case 'urgency': return copy.sort((a, b) => {
+      const ua = needsBuy(a) ? 1 : 0, ub = needsBuy(b) ? 1 : 0;
+      if (ua !== ub) return ub - ua;
+      return faltaDe(b) - faltaDe(a) || a.name.localeCompare(b.name, 'es');
+    });
+    default: return copy;
+  }
+}
+
+function render() {
+  const used = [...new Set(items.map(i => i.category))];
+  if (cat !== 'Todas' && !used.includes(cat)) cat = 'Todas';
+  const chips = ['Todas', ...used].map(c =>
+    `<button class="chip" data-cat="${esc(c)}" aria-pressed="${!onlyBuy && cat === c}">${esc(c)}</button>`).join('') +
+    `<button class="chip" data-buy="1" aria-pressed="${onlyBuy}">🛒 Por comprar</button>`;
+  $('chips').innerHTML = chips;
+  $('cats').innerHTML = allCats().map(c => `<option value="${esc(c)}">`).join('');
+
+  // Sincronizar inputs con el estado (útil al recargar con filtros guardados)
+  if ($('q').value !== query) $('q').value = query;
+  if ($('sort').value !== sortMode) $('sort').value = sortMode;
+
+  const q = query.trim().toLowerCase();
+  let shown = items.filter(i =>
+    (onlyBuy ? needsBuy(i) : cat === 'Todas' || i.category === cat) &&
+    i.name.toLowerCase().includes(q));
+  shown = sortItems(shown);
+
+  const pending = items.filter(i => needsBuy(i)).length;
+  const empty = items.filter(i => i.stock === 0).length;
+  $('summary').innerHTML = `<span><b>${items.length}</b> productos</span><span><b>${pending}</b> por comprar</span><span><b>${empty}</b> sin stock</span>`;
+
+  if (!shown.length) {
+    $('list').innerHTML = `<div class="empty">${items.length ? 'No hay productos que coincidan.' : 'Todavía no hay productos. Toca “Nuevo producto” para empezar.'}</div>`;
+    bumpId = null;
+    return;
+  }
+  $('list').innerHTML = shown.map(card).join('');
+  bumpId = null;
+}
+
+function card(i) {
+  const lim = i.limit > 0;
+  const falta = lim ? i.limit - i.stock : 0;
+  let tag = '';
+  if (lim && falta > 0) tag = `<div class="tag need">Faltan comprar ${falta} ${falta === 1 ? 'unidad' : 'unidades'} para llegar al límite (${i.limit})</div>`;
+  else if (lim) tag = `<div class="tag full">✓ Stock completo (límite ${i.limit})</div>`;
+  const atMax = lim && i.stock >= i.limit;
+  const cls = i.id === bumpId ? bumpType : '';
+  return `<article class="card ${i.stock === 0 ? 'out' : ''}" data-id="${i.id}">
+    <div class="row">
+      <div class="info"><div class="name">${esc(i.name)}</div><span class="cat">${esc(i.category)}</span></div>
+      <div class="acts">
+        <button class="mini" data-act="edit" aria-label="Editar ${esc(i.name)}">✏️</button>
+        <button class="mini" data-act="del" aria-label="Eliminar ${esc(i.name)}">🗑️</button>
+      </div>
+    </div>
+    ${i.stock === 0 ? '<span class="out-alert">⚠ SIN STOCK</span>' : ''}
+    <div class="stock">
+      <div class="stepper">
+        <button class="step" data-act="dec" ${i.stock === 0 ? 'disabled' : ''} aria-label="Restar uno">−</button>
+        <div class="qty ${cls}">${i.stock}<small>${lim ? 'de ' + i.limit : 'en stock'}</small></div>
+        <button class="step plus" data-act="inc" ${atMax ? 'disabled' : ''} aria-label="Sumar uno">+</button>
+      </div>
+      ${tag}
+    </div>
+  </article>`;
+}
+
+/* Interacciones */
+$('list').addEventListener('click', e => {
+  const b = e.target.closest('[data-act]'); if (!b) return;
+  const el = b.closest('.card'); const it = items.find(x => x.id === el.dataset.id); if (!it) return;
+  const act = b.dataset.act;
+  if (act === 'inc') {
+    if (it.limit > 0 && it.stock >= it.limit) { bumpId = it.id; bumpType = 'shake'; render(); return; }
+    it.stock++; bumpId = it.id; bumpType = 'bump';
+  } else if (act === 'dec') {
+    if (it.stock > 0) { it.stock--; bumpId = it.id; bumpType = 'bump'; }
+  } else if (act === 'edit') { return openDlg(it); }
+  else if (act === 'del') { return softDelete(it); }
+  save(); render();
+});
+
+function softDelete(it) {
+  const index = items.findIndex(x => x.id === it.id);
+  if (index < 0) return;
+  // Si ya había uno pendiente, confirmarlo antes de reemplazar
+  if (pendingDelete) commitDelete();
+  pendingDelete = { item: it, index, timer: setTimeout(commitDelete, 5000) };
+  items = items.filter(x => x.id !== it.id);
+  save(); render();
+  toast(`Eliminado "${it.name}"`, { label: 'Deshacer', onClick: undoDelete });
+}
+function undoDelete() {
+  if (!pendingDelete) return;
+  clearTimeout(pendingDelete.timer);
+  const { item, index } = pendingDelete;
+  pendingDelete = null;
+  items.splice(Math.min(index, items.length), 0, item);
+  save(); render();
+  toast('Restaurado');
+}
+function commitDelete() {
+  if (!pendingDelete) return;
+  clearTimeout(pendingDelete.timer);
+  pendingDelete = null;
+}
+
+$('chips').addEventListener('click', e => {
+  const b = e.target.closest('.chip'); if (!b) return;
+  if (b.dataset.buy) {
+    if (onlyBuy) { openShare(); return; } // segundo toque → compartir
+    onlyBuy = true;
+  } else {
+    cat = b.dataset.cat;
+    onlyBuy = false;
+  }
+  saveFilters(); render();
+});
+$('q').addEventListener('input', e => {
+  query = e.target.value; saveFilters(); render();
+});
+$('sort').addEventListener('change', e => {
+  sortMode = e.target.value; saveSort(); render();
+});
+
+/* Formulario */
+function openDlg(it) {
+  editId = it ? it.id : null;
+  $('dtitle').textContent = it ? 'Editar producto' : 'Nuevo producto';
+  $('fname').value = it ? it.name : '';
+  $('fcat').value = it ? it.category : (!onlyBuy && cat !== 'Todas' ? cat : '');
+  $('fqty').value = it ? it.stock : 0;
+  $('flim').value = it ? it.limit : 0;
+  $('ferr').textContent = '';
+  $('dlg').showModal();
+  $('fname').focus();
+}
+$('add').onclick = () => openDlg(null);
+$('cancel').onclick = () => $('dlg').close();
+
+$('form').addEventListener('submit', e => {
+  const name = $('fname').value.trim(), category = $('fcat').value.trim();
+  let stock = Math.max(0, parseInt($('fqty').value) || 0);
+  const limit = Math.max(0, parseInt($('flim').value) || 0);
+
+  if (!name || !category) {
+    e.preventDefault(); // evita que cierre el dialog
+    $('ferr').textContent = !name ? 'El nombre es obligatorio.' : 'La categoría es obligatoria.';
+    return;
+  }
+  if (limit > 0 && stock > limit) {
+    stock = limit; toast(`Stock ajustado al límite (${limit})`);
+  }
+  if (editId) {
+    Object.assign(items.find(x => x.id === editId), {name, category, stock, limit});
+  } else {
+    items.unshift({id: uid(), name, category, stock, limit});
+  }
+  $('ferr').textContent = '';
+  save(); render();
+});
+
+/* ============ LISTA COMPARTIBLE ============ */
+function buildShareText() {
+  const pend = items.filter(needsBuy).slice().sort((a, b) =>
+    a.category.localeCompare(b.category, 'es') || a.name.localeCompare(b.name, 'es'));
+  if (!pend.length) return '↗️ Lista de compras\n\n¡Todo completo! No hay nada pendiente. ✅';
+  const byCat = {};
+  for (const i of pend) (byCat[i.category] ||= []).push(i);
+  const lines = ['🛒 Lista de compras', ''];
+  for (const [c, arr] of Object.entries(byCat)) {
+    lines.push(`— ${c} —`);
+    for (const i of arr) {
+      const n = faltaDe(i);
+      lines.push(`• ${i.name}${n > 0 ? ' × ' + n : ''}`);
+    }
+    lines.push('');
+  }
+  lines.push(`Total: ${pend.length} producto${pend.length === 1 ? '' : 's'}`);
+  return lines.join('\n').trim();
+}
+async function openShare() {
+  const txt = buildShareText();
+  $('share-text').value = txt;
+  const pend = items.filter(needsBuy).length;
+  $('share-info').textContent = pend
+    ? `${pend} producto${pend === 1 ? '' : 's'} por reponer. Editá el texto si querés y compartilo.`
+    : 'No hay productos pendientes.';
+  $('dlgShare').showModal();
+  $('share-text').focus();
+  $('share-text').setSelectionRange(0, 0);
+}
+$('share-btn').onclick = openShare;
+$('share-cancel').onclick = () => $('dlgShare').close();
+$('share-copy').onclick = async () => {
+  const t = $('share-text').value;
+  try {
+    await navigator.clipboard.writeText(t);
+    toast('📋 Copiado al portapapeles');
+  } catch {
+    const ta = $('share-text'); ta.select(); document.execCommand('copy');
+    toast('📋 Copiado');
+  }
+};
+$('share-send').onclick = async () => {
+  const t = $('share-text').value;
+  if (navigator.share) {
+    try { await navigator.share({title: 'Lista de compras', text: t}); }
+    catch (e) {}
+  } else {
+    try {
+      await navigator.clipboard.writeText(t);
+      toast('📋 Copiado (compartir no disponible)');
+    } catch { toast('No se pudo compartir'); }
+  }
+};
+
+/* ============ ESTADÍSTICAS ============ */
+function openStats() {
+  $('stats-content').innerHTML = buildStatsHTML();
+  $('dlgStats').showModal();
+}
+function buildStatsHTML() {
+  if (!items.length) return '<p class="hint">Todavía no hay datos para mostrar.</p>';
+
+  const totalUnits = items.reduce((s, i) => s + i.stock, 0);
+  const conLimite = items.filter(i => i.limit > 0);
+  const completos = items.filter(i => i.limit > 0 && i.stock >= i.limit).length;
+  const sinStock = items.filter(i => i.stock === 0).length;
+  const porComprar = items.filter(needsBuy).length;
+  const unidadesFaltantes = items.reduce((s, i) => s + faltaDe(i), 0);
+
+  const catCount = {};
+  const catUnits = {};
+  for (const i of items) {
+    catCount[i.category] = (catCount[i.category] || 0) + 1;
+    catUnits[i.category] = (catUnits[i.category] || 0) + i.stock;
+  }
+  const maxUnits = Math.max(1, ...Object.values(catUnits));
+
+  const topStock = items.slice().sort((a, b) => b.stock - a.stock).slice(0, 5);
+  const bottomStock = items.slice().sort((a, b) => a.stock - b.stock).slice(0, 5);
+
+  const cards = `
+    <div class="stats">
+      <div class="stat"><div class="k">Productos</div><div class="v">${items.length}</div><div class="sub">${Object.keys(catCount).length} categorías</div></div>
+      <div class="stat"><div class="k">Unidades en stock</div><div class="v">${totalUnits}</div><div class="sub">en total</div></div>
+      <div class="stat"><div class="k">Por comprar</div><div class="v">${porComprar}</div><div class="sub">${unidadesFaltantes} unidades faltantes</div></div>
+      <div class="stat"><div class="k">Sin stock</div><div class="v">${sinStock}</div><div class="sub">productos en cero</div></div>
+    </div>`;
+
+  const barsCat = Object.entries(catUnits)
+    .sort((a, b) => b[1] - a[1])
+    .map(([c, u]) => {
+      const pct = u === 0 ? 0 : Math.max(4, u / maxUnits * 100);
+      return `
+      <div class="bar-row">
+        <div class="bar-label" title="${esc(c)}">${esc(c)}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${pct.toFixed(1)}%;${u===0?'opacity:.25':''}"></div></div>
+        <div class="bar-num">${u}</div>
+      </div>`;
+    }).join('');
+
+  const completitud = conLimite.length
+    ? `<div class="stat" style="grid-column:1/-1"><div class="k">Stock completo</div><div class="v">${completos} / ${conLimite.length}</div><div class="sub">${Math.round(completos / conLimite.length * 100)}% de los productos con límite están al máximo</div></div>`
+    : '';
+
+  const topList = topStock.map(i => `<li><span>${esc(i.name)}</span><span class="cnt">${i.stock} u.</span></li>`).join('');
+  const bottomList = bottomStock.map(i => `<li><span>${esc(i.name)}</span><span class="cnt">${i.stock} u.</span></li>`).join('');
+
+  return `
+    ${cards}
+    <div class="sec-title">Distribución por categoría (unidades)</div>
+    <div class="bars">${barsCat}</div>
+    ${completitud ? `<div class="stats" style="margin-top:14px">${completitud}</div>` : ''}
+    <div class="sec-title">🏆 Mayor stock</div>
+    <ul class="top-list">${topList}</ul>
+    <div class="sec-title">⚠ Menor stock</div>
+    <ul class="top-list">${bottomList}</ul>
+  `;
+}
+$('stats-btn').onclick = openStats;
+$('stats-cancel').onclick = () => $('dlgStats').close();
+
+
+/* Toast con acción opcional */
+function toast(m, action) {
+  const t = $('toast');
+  t.innerHTML = '';
+  const span = document.createElement('span');
+  span.textContent = m;
+  t.appendChild(span);
+  if (action) {
+    const b = document.createElement('button');
+    b.textContent = action.label;
+    b.onclick = () => { action.onClick(); hideToast(); };
+    t.appendChild(b);
+  }
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(hideToast, action ? 5000 : 2400);
+}
+function hideToast() {
+  $('toast').classList.remove('show');
+  clearTimeout(toastTimer);
+}
+
+/* Service worker inline (PWA offline) */
+if ('serviceWorker' in navigator) {
+  const swCode = `
+    const CACHE = 'despensa-v1';
+    self.addEventListener('install', e => {
+      self.skipWaiting();
+      e.waitUntil(caches.open(CACHE).then(c => c.addAll(['./'])));
+    });
+    self.addEventListener('activate', e => {
+      e.waitUntil(caches.keys().then(keys =>
+        Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+      ).then(() => self.clients.claim()));
+    });
+    self.addEventListener('fetch', e => {
+      if (e.request.method !== 'GET') return;
+      e.respondWith(
+        caches.match(e.request).then(r => r || fetch(e.request).then(res => {
+          const copy = res.clone();
+          caches.open(CACHE).then(c => c.put(e.request, copy)).catch(()=>{});
+          return res;
+        }).catch(() => caches.match('./')))
+      );
+    });
+  `;
+  try {
+    const blob = new Blob([swCode], {type: 'text/javascript'});
+    navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(() => {});
+  } catch (e) {}
+}
+
+render();
+</script>
+</body>
+</html>
